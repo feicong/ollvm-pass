@@ -1,71 +1,122 @@
+## 简介
 
-Example LLVM passes - based on LLVM 8-18, LLVM7- is not tested.
+本项目基于`LLVM NewPass`实现`原版OLLVM`和`Hikari`的`Pass`化，有以下目标:
+* 验证可以用独立`Pass`实现`IR`层混淆
+* 用于辅助验证另一个项目`ida_mcp`
 
-## build
+本项目在`MacOS15`+`LLVM15-19`上测试，因为最大限度保留原始代码未改动因此不会有混淆功能方面的增强。对更强的混淆功能有兴趣的可以关注我的另一个项目`SLLVM`
 
-Build LLVM
-```bash
-cd /path/to/llvm
-cmake -S llvm -B build -G Ninja -DLLVM_ENABLE_PROJECTS="clang;lld" -DCMAKE_BUILD_TYPE=Debug 
-cmake --build build
+使用独立`Pass`实现混淆的优缺点：
+* 优点1：如果已经用`Homebrew`(Mac)/`apt`(Debian)等安装过`LLVM`则无需编译`LLVM`，开发速度快
+* 优点2：`Pass`本身编译速度快，编译出的文件小
+* 缺点1：搭配对应的`Clang`一起使用，至少保证`LLVM`大版本匹配
+
+## 策略
+
+在很多实际项目中，由于以下原因无法对整个项目完全混淆：
+* 项目较大，依赖较多，或使用了很多header-only的库，混淆了很多不需要混淆的代码，导致编译出来的二进制过大
+* 项目较大，依赖较多，使用了平坦化(或其他方式)混淆了很多不需要混淆的代码，导致编译时间过久甚至卡死
+* 混淆了复杂算法，导致运行时耗时比正常大很多，一般使用平坦化后耗时会增加10%以上
+* 混淆过多可能不允许上架AppStore/GooglePlay等
+
+实际操作时, 常常需要根据模块/函数的重要性使用不同程度的混淆，因此需要配置策略来指定哪些模块/函数需要用哪种混淆，而开源的`OLLVM`常见设置策略的方式如下：
+* 对需要混淆的模块单独指定命令行参数，如`-llvm -fla`，这种方式兼容所有支持`LLVM`命令行参数的编译器前端
+* 使用环境变量指定混淆参数
+* 对需要混淆的函数指定注解，如`__attribute((__annotate__(("fla"))))`(新式语法`[[clang::annotate("fla")]]`)，这种方式仅支持`C/C++`，`Objective-C`和其他语言均不支持
+* 对需要混淆的函数指定标记函数，如下所示，这种方式支持`Objective-C`
+```objc
+extern void hikari_fla(void);
+@implementation foo2:NSObject
++(void)foo{
+  hikari_fla();
+  NSLog(@"FOOOO2");
+}
+@end
 ```
 
-Build Demo
-```bash
-cd /path/to/llvm-pass-hikari
-export LLVM_DIR=/path/to/llvm/build/lib/cmake/llvm
-cmake -B build --fresh
-cmake --build build
+### `Pass`策略语法
+
+以上方式均有局限性，或对代码改动太大，或无法控制到函数粒度，或只支持特定语言。本项目使用配置文件来指定需要混淆的函数和模块，兼容大部分编译器前端及开发语言。策略文件为工作目录下名为`policy.json`的文件，需用户提供，字段如下：
+|               |字段类型   |字段含义                   |必须|
+|:-             |:-        |:-                       |:-  |
+|globals        |字典       |全局选项                  |否  |
+|policy_map     |字典       |`策略名 - 混淆选项集合`的映射|是  |
+|policies       |数组       |所有策略                  |是  |
+|policies.module|字符串     |正则匹配模块名             |是  |
+|policies.func  |字符串     |正则匹配函数名             |是  |
+|policies.policy|字符串     |策略名，对应`policies`     |是  |
+
+语法如下：
+* 前向覆盖，如果`policies`数组中，如果后面的项匹配的`module`/`func`是在其之前项匹配的子集，则覆盖前一项对应的策略
+* 支持注释：非必须的子字段，都支持`#`注释，如`"#enable-strcry": true`
+* 支持名称混淆：本人另一个项目`SLLVM`支持`c++`/`swift`等语言名称混淆情况下的`module`/`func`匹配
+
+```json
+{
+    "globals": {
+        "acd-use-initialize": true,
+        ...
+    },
+    "policy_map": {
+        "test_pol": {
+            "enable-strcry": true,
+            "enable-splitobf": false,
+            "split_num": 2,
+            ...
+        }
+    },
+    "policies": [
+        {
+            "module": ".*",
+            "func": ".*",
+            "policy": "test_pol"
+        }
+    ]
+}
 ```
 
-## Test
+在每个子工程(`原版OLLVM`/`Hikari`/...)中的`test`目录可找到`policy.json`，其中包含了所有可配置字段
 
-Test environment:   MacOS 13.x
+## 编译
 
-### Test with clang
-
+若能找到LLVM对应的编译目录位置(如已经用`Homebrew`(Mac)/`apt`(Debian)等安装过`LLVM`，可定位到`./cmake/AddLLVM.cmake`)则可跳过编译
 ```bash
-# for LLVM<=12      Legacy Pass
-llvm12/build/bin/clang -isysroot `xcrun --sdk macosx --show-sdk-path` -Xclang -load -Xclang build/MyPassDemo12.dylib /tmp/1.cpp
-# for LLVM<=12      Legacy Pass (Equal to above)
-llvm12/build/bin/clang -isysroot `xcrun --sdk macosx --show-sdk-path` -fplugin=build/MyPassDemo12.dylib /tmp/1.cpp
-# for LLVM=9/10/11  New Pass (O3 required)
-llvm11/build/bin/clang -isysroot `xcrun --sdk macosx --show-sdk-path` -fexperimental-new-pass-manager -fpass-plugin=build/MyPassDemo11.dylib /tmp/1.cpp -O3
-# for LLVM=12       New Pass
-llvm12/build/bin/clang -isysroot `xcrun --sdk macosx --show-sdk-path` -fexperimental-new-pass-manager -fpass-plugin=build/MyPassDemo12.dylib /tmp/1.cpp
-# for LLVM=13/14    Legacy Pass
-llvm13/build/bin/clang -isysroot `xcrun --sdk macosx --show-sdk-path` -flegacy-pass-manager -fplugin=build/MyPassDemo13.dylib /tmp/1.cpp
-# for LLVM=13/14    New Pass
-llvm13/build/bin/clang -isysroot `xcrun --sdk macosx --show-sdk-path` -fpass-plugin=build/MyPassDemo13.dylib /tmp/1.cpp
-# for LLVM>=15      New Pass
-llvm15/build/bin/clang -isysroot `xcrun --sdk macosx --show-sdk-path` -fpass-plugin=build/MyPassDemo15.dylib /tmp/1.cpp
+# optional: -DLLVM_ENABLE_PROJECTS=clang -DCMAKE_BUILD_TYPE=Debug
+cmake -S llvm -G Ninja -B llvm_build_dir
+cmake --build llvm_build_dir
 ```
 
-### Test with opt
-
+以Mac系统+原版OLLVM为例
 ```bash
-# for LLVM all versions
-llvm8/build/bin/clang -emit-llvm -c -isysroot `xcrun --sdk macosx --show-sdk-path` -o /tmp/test.bc /tmp/test.cpp
-llvm8/build/bin/opt -load-pass-plugin build/MyPassDemo8.dylib -passes all -S -o /tmp/test_new.bc /tmp/test.bc
+git clone https://github.com/lich4/llvm-pass-hikari
+cd llvm-pass-hikari
+export LLVM_DIR=/path/to/llvm_build_dir
+cmake -S obfuscator -G Ninja -B obfuscator/build
+cmake --build obfuscator/build
 ```
 
-NOTICE: opt support ll as input from LLVM15  
+## 测试
+
+以Mac系统+原版OLLVM为例，注意：
+* `Pass`要匹配对应的`LLVM/Clang`大版本
+* 如果测试`objc++`时报头文件相关错误则需要开源`clang`版本和`Xcode`对应`clang`版本一致
 
 ```bash
-llvm15/build/bin/clang -emit-llvm -S -isysroot `xcrun --sdk macosx --show-sdk-path` -o /tmp/test.ll /tmp/test.cpp
-llvm15/build/bin/opt -load-pass-plugin build/MyPassDemo15.dylib -passes all -S -o /tmp/test_new.ll /tmp/test.ll 
+cd test
+# test c
+/path/to/llvm_build_dir/bin/clang -isysroot `xcrun --sdk macosx --show-sdk-path` -fpass-plugin=../build/Hikari.dylib test.c -o test
+# test cpp
+/path/to/llvm_build_dir/bin/clang -isysroot `xcrun --sdk macosx --show-sdk-path` -fpass-plugin=../build/Hikari.dylib -std=c++11 -stdlib=libc++ -lc++ test.cpp -o test
+# test objc
+/path/to/llvm_build_dir/bin/clang -isysroot `xcrun --sdk macosx --show-sdk-path` -fpass-plugin=../build/Hikari.dylib -framework Foundation  test.m -o test
+# test objc++
+/path/to/llvm_build_dir/bin/clang -isysroot `xcrun --sdk macosx --show-sdk-path` -fpass-plugin=../build/Hikari.dylib -framework Foundation -std=c++11 -stdlib=libc++ -lc++ test.mm -o test
 ```
 
-### compile
+## 适配`Xcode`
 
-* c/cpp -> bc `clang -emit-llvm -c`
-* c/cpp -> ll `clang -emit-llvm -S`
-* c/cpp -> obj `clang -c`
-* ll/bc -> obj/asm `llc`
-* bc/obj -> bin `lld`
-* ll/bc -> ll `opt -S` (ll -> ll in LLVM>=15)
-* ll/bc -> bc `opt` (ll -> bc in LLVM>=15)
-* ll -> bc `llvm-as`
-* bc -> ll `llvm-dis`
-* c/cpp/obj/asm -> bin `clang`
+由于开源`LLVM`的`Clang`不同于`Xcode`的`Clang`，因此动态`Pass`不能直接用于`Xcode`，可以考虑以下方式：
+* 在`Xcode`中指定`CC`变量为开源`clang`(如`brew install llvm@15`)，且指定`Other C Flags`的`-fpass-plugin`为对应`Pass`路径
+* 在`Xcode`中指定`CC`变量为编译脚本，脚本逻辑为"先用`clang -emit-llvm`参数生成`bitcode`，然后运行`opt`执行`Pass`，最后用`clang -c`生成原本要生成的`obj`文件"。此种方式可以直接使用`Xcode`自带的`Apple clang`，能比较好的兼容`arm64e`架构
+* 直接针对`Xcode`自带的`Apple clang`开发动态`Pass`，在`Xcode`中指定`Other C Flags`指定`-fpass-plugin`为`Pass`路径。此种方式复杂度较高，需要处理大量符号冲突，只适合精通`LLVM`的开发者。此种方式可以直接使用`Xcode`自带的`Apple clang`，能比较好的兼容`arm64e`架构
 

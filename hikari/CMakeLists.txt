@@ -1,0 +1,64 @@
+cmake_minimum_required(VERSION 3.6)
+project(Hikari)
+set(TARGET_BIN Hikari)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_BUILD_TYPE "Debug")
+set(LLVM_LIBRARY_OUTPUT_INTDIR ${${CMAKE_PROJECT_NAME}_BINARY_DIR}) # 兼容Linux
+
+find_package(LLVM REQUIRED CONFIG)              # LLVMConfig.cmake初始化环境
+list(APPEND CMAKE_MODULE_PATH "${LLVM_DIR}")    # 兼容LLVM<=13
+
+include(AddLLVM)                                # 导入add_llvm_pass_plugin函数
+include(HandleLLVMOptions)
+
+add_definitions(${LLVM_DEFINITIONS})
+include_directories(${LLVM_INCLUDE_DIRS})
+link_directories(${LLVM_LIBRARY_DIRS}) 
+
+if(NOT COMMAND add_llvm_pass_plugin)            # 兼容LLVM<=9
+    message(WARNING "add_llvm_pass_plugin not exist")
+    function(add_llvm_pass_plugin name)         
+        cmake_parse_arguments(ARG "NO_MODULE" "SUBPROJECT" "" ${ARGN})
+        set(link_into_tools_default OFF)
+        add_llvm_library(${name} MODULE ${ARG_UNPARSED_ARGUMENTS})
+        message(STATUS "Registering ${name} as a pass plugin (static build: ${LLVM_${name_upper}_LINK_INTO_TOOLS})")
+    endfunction(add_llvm_pass_plugin)
+endif()
+
+add_llvm_pass_plugin(${TARGET_BIN}
+    AntiClassDump.cpp
+    AntiDebugging.cpp
+    AntiHooking.cpp
+    BogusControlFlow.cpp
+    ConstantEncryption.cpp
+    Flattening.cpp
+    FunctionCallObfuscate.cpp
+    FunctionWrapper.cpp
+    IndirectBranch.cpp
+    SplitBasicBlocks.cpp
+    StringEncryption.cpp
+    SubstituteImpl.cpp
+    Substitution.cpp
+    CryptoUtils.cpp
+    Utils.cpp
+    Pass.cpp
+    ../PassUtils.cpp
+)
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_compile_definitions(${TARGET_BIN} PRIVATE DEBUG)
+endif()
+
+target_include_directories(${TARGET_BIN} SYSTEM PRIVATE
+    ${LLVM_INCLUDE_DIRS}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../3rdparty
+)
+target_include_directories(${TARGET_BIN} PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+target_compile_options(${TARGET_BIN} PUBLIC 
+    -fexceptions
+    -Wall
+)
+

@@ -1,16 +1,3 @@
-//===- SubstitutionIncludes.h - Substitution Obfuscation pass-------------------------===//
-//
-//                     The LLVM Compiler Infrastructure
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
-//
-//===----------------------------------------------------------------------===//
-//
-// This file contains includes and defines for the substitution pass
-//
-//===----------------------------------------------------------------------===//
-
 #ifndef _SUBSTITUTIONS_H_
 #define _SUBSTITUTIONS_H_
 
@@ -23,11 +10,10 @@
 #define NUMBER_XOR_SUBST 2
 
 struct Substitution {
-  int ObfTimes; // sub_loop:1
-  uint32_t ObfProbRate; // sub_prob:50
+  int ObfTimes;
   Substitution();
 
-	void (Substitution::*funcAdd[NUMBER_ADD_SUBST])(BinaryOperator *bo);
+  void (Substitution::*funcAdd[NUMBER_ADD_SUBST])(BinaryOperator *bo);
   void (Substitution::*funcSub[NUMBER_SUB_SUBST])(BinaryOperator *bo);
   void (Substitution::*funcAnd[NUMBER_AND_SUBST])(BinaryOperator *bo);
   void (Substitution::*funcOr[NUMBER_OR_SUBST])(BinaryOperator *bo);
@@ -56,3 +42,4 @@ struct Substitution {
 };
 
 #endif
+

@@ -1,9 +1,8 @@
 #ifndef _SUBSTITUTE_IMPL_H
 #define _SUBSTITUTE_IMPL_H
 
-#include "llvm/IR/InstrTypes.h"
-
-namespace llvm {
+#include "common.h"
+//#include "llvm/IR/InstrTypes.h"
 
 namespace SubstituteImpl {
 
@@ -15,7 +14,5 @@ void substituteXor(BinaryOperator *bo);
 void substituteMul(BinaryOperator *bo);
 
 } // namespace SubstituteImpl
-
-} // namespace llvm
 
 #endif

@@ -1,14 +1,15 @@
 #ifndef _ANTI_DEBUGGING_H_
 #define _ANTI_DEBUGGING_H_
 
-#include "llvm/IR/PassManager.h"
-#include "llvm/Pass.h"
+#include "common.h"
 
-namespace llvm {
+struct AntiDebugging {
+	string PreCompiledIRPath; // adbextirpath:""
+	bool initialized;
+	Triple triple;
 
-ModulePass *createAntiDebuggingPass(bool flag);
-void initializeAntiDebuggingPass(PassRegistry &Registry);
-
-} // namespace llvm
+	bool initialize(Module &M);
+	bool runOnFunction(Function &F);
+};
 
 #endif

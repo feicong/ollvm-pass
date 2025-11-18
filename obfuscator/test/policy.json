@@ -1,0 +1,22 @@
+{
+    "policy_map": {
+        "test_pol": {
+            "enable_bcf": true,
+            "bcf_prob": 100,
+            "bcf_times": 1,
+            "enable_fla": true,
+            "enable_split": true,
+            "split_n": 2,
+            "enable_sub": true,
+            "sub_times": 1
+        }
+    },
+    "policies": [
+        {
+            "module": ".*",
+            "func": ".*",
+            "policy": "test_pol"
+        }
+    ]
+}
+

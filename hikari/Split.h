@@ -1,14 +1,29 @@
-#ifndef _SPLIT_H_
-#define _SPLIT_H_
+//===- FlatteningIncludes.h - Flattening Obfuscation pass------------------===//
+//
+//                     The LLVM Compiler Infrastructure
+//
+// This file is distributed under the University of Illinois Open Source
+// License. See LICENSE.TXT for details.
+//
+//===----------------------------------------------------------------------===//
+//
+// This file contains includes and defines for the split basicblock pass
+//
+//===----------------------------------------------------------------------===//
 
-#include "llvm/IR/PassManager.h"
-#include "llvm/Pass.h"
+#ifndef _SPLIT_INCLUDES_
+#define _SPLIT_INCLUDES_
 
-namespace llvm {
+#include "common.h"
 
-FunctionPass *createSplitBasicBlockPass(bool flag);
-void initializeSplitBasicBlockPass(PassRegistry &Registry);
+struct SplitBasicBlock {
+  int SplitNum; // split_num:2
 
-} // namespace llvm
+  bool runOnFunction(Function &F);
+  void split(Function *f);
+  bool containsPHI(BasicBlock *b);
+  bool containsSwiftError(BasicBlock *BB);
+  void split_point_shuffle(SmallVector<size_t, 32> &vec);
+};
 
 #endif

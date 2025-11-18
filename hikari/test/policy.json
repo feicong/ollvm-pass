@@ -1,0 +1,71 @@
+{
+    "globals": {
+        "enable-acdobf": true,
+        "acd-use-initialize": true,
+        "acd-rename-methodimp": false,
+
+        "fco_flag": -1,
+        "fcoconfig": "+-x/",
+
+        "adbextirpath": "",
+
+        "indibran-use-stack": true,
+        "indibran-enc-jump-target": false
+    },
+    "policy_map": {
+        "test_pol": {
+            "enable-antihook": false,
+            "ah_inline": true,
+            "ah_objcruntime": true,
+            "ah_antirebind": false,
+
+            "enable-fco": false,
+
+            "enable-adb": false,
+            "adb_prob": 40,
+
+            "enable-strcry": false,
+            "strcry_prob": 100,
+
+            "enable-splitobf": false,
+            "split_num": 2,
+
+            "enable-bcfobf": false,
+            "bcf_prob": 70,
+            "bcf_loop": 1,
+            "bcf_cond_compl": 3,
+            "bcf_onlyjunkasm": false,
+            "bcf_junkasm": false,
+            "bcf_junkasm_maxnum": 4,
+            "bcf_junkasm_minnum": 2,
+            "bcf_createfunc": false,
+
+            "enable-cffobf": false,
+
+            "enable-subobf": false,
+            "sub_loop": 1,
+            "sub_prob": 50,
+
+            "enable-constenc": false,
+            "constenc_subxor": false,
+            "constenc_subxor_prob": 40,
+            "constenc_togv": false,
+            "constenc_togv_prob": 50,
+            "constenc_times": 1,
+
+            "enable-indibran": false,
+
+            "enable-funcwra": true,
+            "fw_times": 2,
+            "fw_prob": 30
+        }
+    },
+    "policies": [
+        {
+            "module": ".*",
+            "func": ".*",
+            "policy": "test_pol"
+        }
+    ]
+}
+

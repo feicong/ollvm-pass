@@ -1,5 +1,4 @@
-//===- BogusControlFlow.h - BogusControlFlow Obfuscation
-// pass-------------------------===//
+//===- BogusControlFlow.h - BogusControlFlow Obfuscation pass-------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -15,14 +14,27 @@
 #ifndef _BOGUSCONTROLFLOW_H_
 #define _BOGUSCONTROLFLOW_H_
 
-#include "llvm/IR/PassManager.h"
-#include "llvm/Pass.h"
+#include "common.h"
 
-namespace llvm {
+struct BogusControlFlow {
+  int ObfProbRate; // bcf_prob:70
+  int ObfTimes; // bcf_loop:1
+  int ConditionExpressionComplexity; // bcf_cond_compl:3
+  bool OnlyJunkAssembly; // bcf_onlyjunkasm:false
+  bool JunkAssembly; // bcf_junkasm:false
+  int MaxNumberOfJunkAssembly; // bcf_junkasm_maxnum:4
+  int MinNumberOfJunkAssembly; // bcf_junkasm_minnum:2
+  bool CreateFunctionForOpaquePredicate; // bcf_createfunc:false
+  SmallVector<const ICmpInst *, 8> needtoedit;
 
-FunctionPass *createBogusControlFlowPass(bool flag);
-void initializeBogusControlFlowPass(PassRegistry &Registry);
-
-} // namespace llvm
+  bool runOnFunction(Function &F);
+  void bogus(Function &F);
+  bool containsCoroBeginInst(BasicBlock *b);
+  bool containsMustTailCall(BasicBlock *b);
+  bool containsSwiftError(BasicBlock *b);
+  void addBogusFlow(BasicBlock *basicBlock, Function &F);
+  BasicBlock *createAlteredBasicBlock(BasicBlock *basicBlock, const Twine &Name = "gen", Function *F = nullptr);
+  bool doF(Function &F);
+};
 
 #endif

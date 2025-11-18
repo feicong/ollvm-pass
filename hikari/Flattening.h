@@ -14,13 +14,11 @@
 #ifndef _FLATTENING_H_
 #define _FLATTENING_H_
 
-#include "llvm/IR/PassManager.h"
-#include "llvm/Pass.h"
+#include "common.h"
 
-namespace llvm {
-FunctionPass *createFlatteningPass(bool flag);
-void initializeFlatteningPass(PassRegistry &Registry);
-
-} // namespace llvm
+struct Flattening {
+  bool runOnFunction(Function &F);
+  void flatten(Function *f);
+};
 
 #endif
