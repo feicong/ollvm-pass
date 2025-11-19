@@ -15,6 +15,7 @@
 #include "llvm/Pass.h"
 #include "llvm/Passes/PassBuilder.h"
 #include "llvm/Passes/PassPlugin.h"
+#include "llvm/Support/FormatVariadic.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/Timer.h"
@@ -27,16 +28,17 @@
 #include "llvm/Transforms/Utils.h"
 #include "llvm/Transforms/Utils/BasicBlockUtils.h"
 #include "llvm/Transforms/Utils/Cloning.h"
+#include "llvm/Transforms/Utils/GlobalStatus.h"
 #include "llvm/Transforms/Utils/Local.h"
 #if LLVM_VERSION_MAJOR >= 12
 #include "llvm/Transforms/Utils/LowerSwitch.h"
 #endif
 #include "llvm/Transforms/Utils/ModuleUtils.h"
-
 #include <stdint.h>
 #include <unistd.h>
 #include <fstream>
 #include <iostream>
+#include <random>
 #include <regex>
 #include <string>
 #include <unordered_set>
@@ -66,10 +68,6 @@ using namespace std;
 
 #if LLVM_VERSION_MAJOR <= 15
 #define starts_with startswith
-#endif
-
-#if LLVM_VERSION_MAJOR <= 14
-#define getPtrTy getInt8PtrTy
 #endif
 
 #endif 
