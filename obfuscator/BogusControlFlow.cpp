@@ -340,9 +340,10 @@ BasicBlock* BogusControlFlow::createAlteredBasicBlock(BasicBlock * basicBlock,
           switch(llvm::cryptoutils->get_range(4)){ // to improve
             case 0: //do nothing
               break;
-            case 1: op = UnaryOperator::CreateFNeg(i->getOperand(0),*var,&*i);
-                    op1 = BinaryOperator::Create(Instruction::Add,op,
-                        i->getOperand(1),"gen",&*i);
+            case 1: 
+                    //op = UnaryOperator::CreateFNeg(i->getOperand(0),*var,&*i);
+                    //op1 = BinaryOperator::Create(Instruction::Add,op,
+                    //    i->getOperand(1),"gen",&*i);
                     break;
             case 2: op1 = BinaryOperator::Create(Instruction::Sub,
                         i->getOperand(0),
@@ -365,9 +366,10 @@ BasicBlock* BogusControlFlow::createAlteredBasicBlock(BasicBlock * basicBlock,
           switch(llvm::cryptoutils->get_range(3)){ // can be improved
             case 0: //do nothing
               break;
-            case 1: op = UnaryOperator::CreateFNeg(i->getOperand(0),*var,&*i);
-                    op1 = BinaryOperator::Create(Instruction::FAdd,op,
-                        i->getOperand(1),"gen",&*i);
+            case 1: 
+                    //op = UnaryOperator::CreateFNeg(i->getOperand(0),*var,&*i);
+                    //op1 = BinaryOperator::Create(Instruction::FAdd,op,
+                    //    i->getOperand(1),"gen",&*i);
                     break;
             case 2: op = BinaryOperator::Create(Instruction::FSub,
                         i->getOperand(0),

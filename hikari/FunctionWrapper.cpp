@@ -6,13 +6,28 @@
 #include "CryptoUtils.h"
 
 bool FunctionWrapper::runOnFunction(Function &F) {
+  vector<Instruction*> insts; // 修复崩溃
   for (Instruction &Inst : instructions(F))
-    if ((isa<CallInst>(&Inst) || isa<InvokeInst>(&Inst)))
-      if (cryptoutils->get_range(100) <= ProbRate)
-        callsites.emplace_back(new CallSite(&Inst));
-  for (CallSite *CS : callsites)
-    for (uint32_t i = 0; i < ObfTimes && CS != nullptr; i++)
+    if ((isa<CallInst>(&Inst) || isa<InvokeInst>(&Inst))) {
+      CallBase* CB = cast<CallBase>(&Inst);
+      Function* Callee = CB->getCalledFunction();
+      if (Callee == nullptr) {
+        continue;
+      }
+      StringRef fName = Callee->getName();
+      if (fName.starts_with("llvm.")) {
+        continue;
+      }
+      if (cryptoutils->get_range(100) <= ProbRate) {
+        insts.push_back(&Inst); // 修复崩溃
+      }
+    }
+  for (Instruction* Inst : insts) { // 修复崩溃
+    CallSite* CS = new CallSite(Inst);
+    for (uint32_t i = 0; i < ObfTimes && CS != nullptr; i++) {
       CS = HandleCallSite(CS);
+    }
+  }
   return true;
 } // End of runOnModule
 
