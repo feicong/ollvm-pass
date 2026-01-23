@@ -1,7 +1,7 @@
 {
     "globals": {
-        "enable-acdobf": true,
-        "acd-use-initialize": true,
+        "enable-acdobf": false,
+        "acd-use-initialize": false,
         "acd-rename-methodimp": false,
 
         "fco_flag": -1,
@@ -9,14 +9,14 @@
 
         "adbextirpath": "",
 
-        "indibran-use-stack": true,
+        "indibran-use-stack": false,
         "indibran-enc-jump-target": false
     },
     "policy_map": {
         "test_pol": {
             "enable-antihook": false,
-            "ah_inline": true,
-            "ah_objcruntime": true,
+            "ah_inline": false,
+            "ah_objcruntime": false,
             "ah_antirebind": false,
 
             "enable-fco": false,
@@ -40,7 +40,7 @@
             "bcf_junkasm_minnum": 2,
             "bcf_createfunc": false,
 
-            "enable-cffobf": false,
+            "enable-cffobf": true,
 
             "enable-subobf": false,
             "sub_loop": 1,
@@ -55,9 +55,13 @@
 
             "enable-indibran": false,
 
-            "enable-funcwra": true,
+            "enable-funcwra": false,
             "fw_times": 2,
             "fw_prob": 30
+        },
+        "test_dump": {
+            "enable-cffobf": true,
+            "dump": true
         }
     },
     "policies": [
@@ -65,6 +69,11 @@
             "module": ".*",
             "func": ".*",
             "policy": "test_pol"
+        },
+        {
+            "module": "test.c",
+            "func": "main",
+            "policy": "test_dump"
         }
     ]
 }

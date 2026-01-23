@@ -54,7 +54,14 @@ public:
                     continue;
                 }
                 errs() << ">>>> run fla on " << func_name << "\n";
+                bool dump = func_policy.value("dump", false);
+                if (dump) {
+                    dumpIR(".arkari.fla.orig.ll", &F);
+                }
                 fla.runOnFunction(F);
+                if (dump) {
+                    dumpIR(".arkari.fla.ll", &F);
+                }
             }
         }
         // ibr
@@ -70,7 +77,14 @@ public:
                     continue;
                 }
                 errs() << ">>>> run indbr on " << func_name << "\n";
+                bool dump = func_policy.value("dump", false);
+                if (dump) {
+                    dumpIR(".arkari.indbr.orig.ll", &F);
+                }
                 indbr.runOnFunction(F);
+                if (dump) {
+                    dumpIR(".arkari.indbr.ll", &F);
+                }
             }
         }
         // icall
@@ -86,7 +100,14 @@ public:
                     continue;
                 }
                 errs() << ">>>> run icall on " << func_name << "\n";
+                bool dump = func_policy.value("dump", false);
+                if (dump) {
+                    dumpIR(".arkari.icall.orig.ll", &F);
+                }
                 icall.runOnFunction(F);
+                if (dump) {
+                    dumpIR(".arkari.icall.ll", &F);
+                }
             }
         }
         // igv
@@ -102,7 +123,14 @@ public:
                     continue;
                 }
                 errs() << ">>>> run indgv on " << func_name << "\n";
+                bool dump = func_policy.value("dump", false);
+                if (dump) {
+                    dumpIR(".arkari.indgv.orig.ll", &F);
+                }
                 indgv.runOnFunction(F);
+                if (dump) {
+                    dumpIR(".arkari.indgv.ll", &F);
+                }
             }
         }
         return PreservedAnalyses::all();

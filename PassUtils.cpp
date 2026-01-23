@@ -54,3 +54,30 @@ bool isNameReserved(Value* V) {
     return false;
 }
 
+bool ensure_dir(const string& path) {
+    string dir = filesystem::path(path).parent_path().string();
+    if (filesystem::exists(dir)) {
+        return true;
+    }
+    std::error_code err;
+    return filesystem::create_directories(dir, err);
+}
+
+bool dumpIR(const string& suffix, Function* F) {
+    string name_prefix = GlobalValue::dropLLVMManglingEscape(F->getName()).str();
+    filesystem::path prefix = filesystem::path("llvm_dump") / name_prefix;
+    string path = prefix.string() + suffix;
+    if (!ensure_dir(path)) {
+        return false;
+    }
+    string content;
+    raw_string_ostream stream(content);
+    cast<Value>(F)->print(stream, true);
+    std::ofstream ofs(path, std::ios::binary);
+    if (!ofs) {
+        return false;
+    }
+    ofs.write(content.data(), content.size());
+    return ofs.good();
+}
+

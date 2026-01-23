@@ -1,14 +1,18 @@
 {
     "policy_map": {
         "test_pol": {
-            "enable_bcf": true,
+            "enable_bcf": false,
             "bcf_prob": 100,
             "bcf_times": 1,
             "enable_fla": true,
-            "enable_split": true,
+            "enable_split": false,
             "split_n": 2,
-            "enable_sub": true,
+            "enable_sub": false,
             "sub_times": 1
+        },
+        "test_dump": {
+            "enable_fla": true,
+            "dump": true
         }
     },
     "policies": [
@@ -16,6 +20,11 @@
             "module": ".*",
             "func": ".*",
             "policy": "test_pol"
+        },
+        {
+            "module": "test.c",
+            "func": "main",
+            "policy": "test_dump"
         }
     ]
 }

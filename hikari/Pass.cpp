@@ -73,10 +73,17 @@ public:
                 bool ah_objcruntime = func_policy.value("ah_objcruntime", true);
                 bool ah_antirebind = func_policy.value("ah_antirebind", false);
                 errs() << ">>>> run antihook on " << func_name << "\n";
+                bool dump = func_policy.value("dump", false);
+                if (dump) {
+                    dumpIR(".hikari.ah.orig.ll", &F);
+                }
                 ah.CheckInlineHook = ah_inline;
                 ah.CheckObjectiveCRuntimeHook = ah_objcruntime;
                 ah.AntiRebindSymbol = ah_antirebind;
                 ah.runOnFunction(F);
+                if (dump) {
+                    dumpIR(".hikari.ah.ll", &F);
+                }
             }
             timer.stopTimer();
             errs() << "antihook time: " << format("%.7f", timer.getTotalTime().getWallTime()) << "s\n";
@@ -120,7 +127,14 @@ public:
                         continue;
                     }
                     errs() << ">>>> run fco on " << func_name << "\n";
+                    bool dump = func_policy.value("dump", false);
+                    if (dump) {
+                        dumpIR(".hikari.fco.orig.ll", &F);
+                    }
                     fco.runOnFunction(F);
+                    if (dump) {
+                        dumpIR(".hikari.fco.ll", &F);
+                    }
                 }
                 timer.stopTimer();
                 errs() << "fco time: " << format("%.7f", timer.getTotalTime().getWallTime()) << "s\n";
@@ -151,7 +165,14 @@ public:
                 if (F.getName() != "ADBCallBack" && F.getName() != "InitADB") {
                     if (cryptoutils->get_range(100) <= adb_prob) {
                         errs() << ">>>> run antidbg on " << func_name << "\n";
+                        bool dump = func_policy.value("dump", false);
+                        if (dump) {
+                            dumpIR(".hikari.adb.orig.ll", &F);
+                        }
                         adb.runOnFunction(F);
+                        if (dump) {
+                            dumpIR(".hikari.adb.ll", &F);
+                        }
                     }
                 }
             }
@@ -180,7 +201,14 @@ public:
                 }
                 errs() << ">>>> run strenc on " << func_name << "\n";
                 strenc.ElementEncryptProb = strcry_prob;
+                bool dump = func_policy.value("dump", false);
+                if (dump) {
+                    dumpIR(".hikari.strenc.orig.ll", &F);
+                }
                 strenc.runOnFunction(F);
+                if (dump) {
+                    dumpIR(".hikari.strenc.ll", &F);
+                }
             }
             timer.stopTimer();
             errs() << "strenc time: " << format("%.7f", timer.getTotalTime().getWallTime()) << "s\n";
@@ -205,8 +233,15 @@ public:
                     continue;
                 }
                 errs() << ">>>> run split on " << func_name << "\n";
+                bool dump = func_policy.value("dump", false);
+                if (dump) {
+                    dumpIR(".hikari.split.orig.ll", &F);
+                }
                 split.SplitNum = split_num;
                 split.runOnFunction(F);
+                if (dump) {
+                    dumpIR(".hikari.split.ll", &F);
+                }
             }
             timer.stopTimer();
             errs() << "split time: " << format("%.7f", timer.getTotalTime().getWallTime()) << "s\n";
@@ -251,6 +286,10 @@ public:
                 }
                 if (!F.isPresplitCoroutine()) {
                     errs() << ">>>> run bcf on " << func_name << "\n";
+                    bool dump = func_policy.value("dump", false);
+                    if (dump) {
+                        dumpIR(".hikari.bcf.orig.ll", &F);
+                    }
                     bcf.ObfProbRate = bcf_prob;
                     bcf.ObfTimes = bcf_loop;
                     bcf.ConditionExpressionComplexity = bcf_cond_compl;
@@ -260,6 +299,9 @@ public:
                     bcf.MinNumberOfJunkAssembly = bcf_junkasm_minnum;
                     bcf.CreateFunctionForOpaquePredicate = bcf_createfunc;
                     bcf.runOnFunction(F);
+                    if (dump) {
+                        dumpIR(".hikari.bcf.ll", &F);
+                    }
                 }
             }
             timer.stopTimer();
@@ -283,7 +325,14 @@ public:
                     continue;
                 }
                 errs() << ">>>> run fla on " << func_name << "\n";
+                bool dump = func_policy.value("dump", false);
+                if (dump) {
+                    dumpIR(".hikari.fla.orig.ll", &F);
+                }
                 fla.runOnFunction(F);
+                if (dump) {
+                    dumpIR(".hikari.fla.ll", &F);
+                }
             }
             timer.stopTimer();
             errs() << "fla time: " << format("%.7f", timer.getTotalTime().getWallTime()) << "s\n";
@@ -313,9 +362,16 @@ public:
                     continue;
                 }
                 errs() << ">>>> run sub on " << func_name << "\n";
+                bool dump = func_policy.value("dump", false);
+                if (dump) {
+                    dumpIR(".hikari.sub.orig.ll", &F);
+                }
                 sub.ObfTimes = sub_loop;
                 sub.ObfProbRate = sub_prob;
                 sub.runOnFunction(F);
+                if (dump) {
+                    dumpIR(".hikari.sub.ll", &F);
+                }
             }
             timer.stopTimer();
             errs() << "sub time: " << format("%.7f", timer.getTotalTime().getWallTime()) << "s\n";
@@ -356,12 +412,19 @@ public:
                     continue;
                 }
                 errs() << ">>>> run constenc on " << func_name << "\n";
+                bool dump = func_policy.value("dump", false);
+                if (dump) {
+                    dumpIR(".hikari.constenc.orig.ll", &F);
+                }
                 constenc.SubstituteXor = constenc_subxor;
                 constenc.SubstituteXorProb = constenc_subxor_prob;
                 constenc.ConstToGV = constenc_togv;
                 constenc.ConstToGVProb = constenc_togv_prob;
                 constenc.ObfTimes = constenc_times;
                 constenc.runOnFunction(F);
+                if (dump) {
+                    dumpIR(".hikari.constenc.ll", &F);
+                }
             }
             timer.stopTimer();
             errs() << "constenc time: " << format("%.7f", timer.getTotalTime().getWallTime()) << "s\n";
@@ -390,8 +453,16 @@ public:
             for (Function* pF : indibr.to_obf_funcs) {
                 Function& F = *pF;
                 string func_name = GlobalValue::dropLLVMManglingEscape(F.getName()).str();
+                const nlohmann::json& func_policy = func_policy_map[func_name];
                 errs() << ">>>> run indibr on " << func_name << "\n";
+                bool dump = func_policy.value("dump", false);
+                if (dump) {
+                    dumpIR(".hikari.indibr.orig.ll", &F);
+                }
                 indibr.runOnFunction(F);
+                if (dump) {
+                    dumpIR(".hikari.indibr.ll", &F);
+                }
             }
             timer.stopTimer();
             errs() << "indibr time: " << format("%.7f", timer.getTotalTime().getWallTime()) << "s\n";
@@ -421,9 +492,16 @@ public:
                     continue;
                 }
                 errs() << ">>>> run fw on " << func_name << "\n";
+                bool dump = func_policy.value("dump", false);
+                if (dump) {
+                    dumpIR(".hikari.fw.orig.ll", &F);
+                }
                 fw.ObfTimes = fw_times;
                 fw.ProbRate = fw_prob;
                 fw.runOnFunction(F);
+                if (dump) {
+                    dumpIR(".hikari.fw.ll", &F);
+                }
             }
             timer.stopTimer();
             errs() << "fw time: " << format("%.7f", timer.getTotalTime().getWallTime()) << "s\n";

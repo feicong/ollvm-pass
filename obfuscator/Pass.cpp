@@ -52,8 +52,15 @@ public:
                     continue;
                 }
                 errs() << ">>>> run split on " << func_name << "\n";
+                bool dump = func_policy.value("dump", false);
+                if (dump) {
+                    dumpIR(".ollvm.split.orig.ll", &F);
+                }
                 split.SplitNum = split_n;
                 split.runOnFunction(F);
+                if (dump) {
+                    dumpIR(".ollvm.split.ll", &F);
+                }
             }
         }
         // bcf
@@ -79,9 +86,16 @@ public:
                     continue;
                 }
                 errs() << ">>>> run bcf on " << func_name << "\n";
+                bool dump = func_policy.value("dump", false);
+                if (dump) {
+                    dumpIR(".ollvm.bcf.orig.ll", &F);
+                }
                 bcf.ObfProbRate = bcf_prob;
                 bcf.ObfTimes = bcf_times;
                 bcf.runOnFunction(F);
+                if (dump) {
+                    dumpIR(".ollvm.bcf.ll", &F);
+                }
             }
         }
         // fla
@@ -97,7 +111,14 @@ public:
                     continue;
                 }
                 errs() << ">>>> run fla on " << func_name << "\n";
+                bool dump = func_policy.value("dump", false);
+                if (dump) {
+                    dumpIR(".ollvm.fla.orig.ll", &F);
+                }
                 fla.runOnFunction(F);
+                if (dump) {
+                    dumpIR(".ollvm.fla.ll", &F);
+                }
             }
         }
         // sub
@@ -118,8 +139,15 @@ public:
                     continue;
                 }
                 errs() << ">>>> run sub on " << func_name << "\n";
+                bool dump = func_policy.value("dump", false);
+                if (dump) {
+                    dumpIR(".ollvm.sub.orig.ll", &F);
+                }
                 sub.ObfTimes = sub_times;
                 sub.runOnFunction(F);
+                if (dump) {
+                    dumpIR(".ollvm.sub.ll", &F);
+                }
             }
         }
         return PreservedAnalyses::all();

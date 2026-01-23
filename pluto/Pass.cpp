@@ -51,7 +51,14 @@ public:
                     continue;
                 }
                 errs() << ">>>> run bcf on " << func_name << "\n";
+                bool dump = func_policy.value("dump", false);
+                if (dump) {
+                    dumpIR(".pluto.bcf.orig.ll", &F);
+                }
                 bcf.run(F);
+                if (dump) {
+                    dumpIR(".pluto.icall.ll", &F);
+                }
             }
         }
         // fla
@@ -67,7 +74,14 @@ public:
                     continue;
                 }
                 errs() << ">>>> run fla on " << func_name << "\n";
+                bool dump = func_policy.value("dump", false);
+                if (dump) {
+                    dumpIR(".pluto.fla.orig.ll", &F);
+                }
                 fla.run(F);
+                if (dump) {
+                    dumpIR(".pluto.fla.ll", &F);
+                }
             }
         }
         // sub
@@ -83,7 +97,14 @@ public:
                     continue;
                 }
                 errs() << ">>>> run sub on " << func_name << "\n";
+                bool dump = func_policy.value("dump", false);
+                if (dump) {
+                    dumpIR(".pluto.sub.orig.ll", &F);
+                }
                 sub.run(F);
+                if (dump) {
+                    dumpIR(".pluto.sub.ll", &F);
+                }
             }
         }
         // mba
@@ -99,7 +120,14 @@ public:
                     continue;
                 }
                 errs() << ">>>> run mba on " << func_name << "\n";
+                bool dump = func_policy.value("dump", false);
+                if (dump) {
+                    dumpIR(".pluto.mba.orig.ll", &F);
+                }
                 mba.run(F);
+                if (dump) {
+                    dumpIR(".pluto.mba.ll", &F);
+                }
             }
         }
         // icall

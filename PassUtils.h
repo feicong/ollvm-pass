@@ -10,6 +10,8 @@ bool startswith(const string& str, const string& prefix);
 string ts_to_date(int64_t ts);
 string get_module_file(Module& M);
 bool isNameReserved(Value* V);
+bool ensure_dir(const string& path);
+bool dumpIR(const string& suffix, Function* F);
 
 #define POLICY_PATH         "policy.json"
 class Config {
