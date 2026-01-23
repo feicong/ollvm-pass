@@ -117,6 +117,7 @@ cd test
 
 由于开源`LLVM`的`Clang`不同于`Xcode`的`Clang`，因此动态`Pass`不能直接用于`Xcode`，可以考虑以下方式：
 * 在`Xcode`中指定`CC`变量为开源`clang`(如`brew install llvm@15`)，且指定`Other C Flags`的`-fpass-plugin`为对应`Pass`路径
-* 在`Xcode`中指定`CC`变量为编译脚本，脚本逻辑为"先用`clang -emit-llvm`参数生成`bitcode`，然后运行`opt`执行`Pass`，最后用`clang -c`生成原本要生成的`obj`文件"。此种方式可以直接使用`Xcode`自带的`Apple clang`，能比较好的兼容`arm64e`架构
+* 在`Xcode`中指定`CC`变量为编译脚本，脚本逻辑为"先用`clang -emit-llvm`参数生成`bitcode`，然后运行`opt`执行`Pass`，最后用`clang -c`生成原本要生成的`obj`文件"。此种方式可以直接使用`Xcode`自带的`Apple clang`，能比较好的兼容`arm64e`架构. (本项目中公开本人自用的`xcode_cc.sh`)
 * 直接针对`Xcode`自带的`Apple clang`开发动态`Pass`，在`Xcode`中指定`Other C Flags`指定`-fpass-plugin`为`Pass`路径。此种方式复杂度较高，需要处理大量符号冲突，只适合精通`LLVM`的开发者。此种方式可以直接使用`Xcode`自带的`Apple clang`，能比较好的兼容`arm64e`架构
+
 
