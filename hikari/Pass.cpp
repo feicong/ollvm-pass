@@ -52,6 +52,10 @@ public:
         TimerGroup tg("Hikari", "Hikari");
         Timer timer("total", "total", tg);
         timer.startTimer();
+        bool dump = module_policy.value("has_dump", false);
+        if (dump) {
+            dumpIR(".hikari.orig.ll", &M);
+        }
         // antihook
         if (module_policy.value("has_antihook", false)) {
             Timer timer("antihook", "antihook", tg);
@@ -330,6 +334,7 @@ public:
                     dumpIR(".hikari.fla.orig.ll", &F);
                 }
                 fla.runOnFunction(F);
+                lowerSwitch(F);
                 if (dump) {
                     dumpIR(".hikari.fla.ll", &F);
                 }
@@ -505,6 +510,9 @@ public:
             }
             timer.stopTimer();
             errs() << "fw time: " << format("%.7f", timer.getTotalTime().getWallTime()) << "s\n";
+        }
+        if (dump) {
+            dumpIR(".hikari.ll", &M);
         }
         timer.stopTimer();
         errs() << "Hikari total time: " << format("%.7f", timer.getTotalTime().getWallTime()) << "s\n";

@@ -12,6 +12,8 @@ string get_module_file(Module& M);
 bool isNameReserved(Value* V);
 bool ensure_dir(const string& path);
 bool dumpIR(const string& suffix, Function* F);
+bool dumpIR(const string& suffix, Module* M);
+void lowerSwitch(Function& F);
 
 #define POLICY_PATH         "policy.json"
 class Config {

@@ -62,6 +62,10 @@
         "test_dump": {
             "enable-cffobf": true,
             "dump": true
+        },
+        "test_dump_module": {
+            "enable-cffobf": true,
+            "enable-dump": true
         }
     },
     "policies": [
@@ -72,8 +76,8 @@
         },
         {
             "module": "test.c",
-            "func": "main",
-            "policy": "test_dump"
+            "func": ".*",
+            "policy": "test_dump_module"
         }
     ]
 }

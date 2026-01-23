@@ -35,6 +35,10 @@ public:
         }
         const nlohmann::json& module_policy = policy[".mp"];
         const nlohmann::json& func_policy_map = policy[".fp"];
+        bool dump = module_policy.value("has_dump", false);
+        if (dump) {
+            dumpIR(".arkari.orig.ll", &M);
+        }
         // strenc
         if (conf.getGlobalConf().value("enable-cse", false)) { // cse是模块级选项
             StringEncryption cse;
@@ -132,6 +136,9 @@ public:
                     dumpIR(".arkari.indgv.ll", &F);
                 }
             }
+        }
+        if (dump) {
+            dumpIR(".arkari.ll", &M);
         }
         return PreservedAnalyses::all();
     };

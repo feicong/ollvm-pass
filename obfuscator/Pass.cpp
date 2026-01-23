@@ -34,6 +34,10 @@ public:
         }
         const nlohmann::json& module_policy = policy[".mp"];
         const nlohmann::json& func_policy_map = policy[".fp"];
+        bool dump = module_policy.value("has_dump", false);
+        if (dump) {
+            dumpIR(".ollvm.orig.ll", &M);
+        }
         // split
         if (module_policy.value("has_split", false)) {
             SplitBasicBlock split;
@@ -149,6 +153,9 @@ public:
                     dumpIR(".ollvm.sub.ll", &F);
                 }
             }
+        }
+        if (dump) {
+            dumpIR(".ollvm.ll", &M);
         }
         return PreservedAnalyses::all();
     };

@@ -81,3 +81,31 @@ bool dumpIR(const string& suffix, Function* F) {
     return ofs.good();
 }
 
+bool dumpIR(const string& suffix, Module* M) {
+    string name_prefix = filesystem::path(M->getSourceFileName()).filename().string();
+    filesystem::path prefix = filesystem::path("llvm_dump") / name_prefix;
+    string path = prefix.string() + suffix;
+    if (!ensure_dir(path)) {
+        return false;
+    }
+    string content;
+    raw_string_ostream stream(content);
+    M->print(stream, nullptr, false, true);
+    std::ofstream ofs(path, std::ios::binary);
+    if (!ofs) {
+        return false;
+    }
+    ofs.write(content.data(), content.size());
+    return ofs.good();
+}
+
+void lowerSwitch(Function& F) {
+    // LLVM_VERSION_MAJOR >= 12
+    PassBuilder PB;
+    FunctionAnalysisManager FAM;
+    FunctionPassManager FPM;
+    PB.registerFunctionAnalyses(FAM);
+    FPM.addPass(LowerSwitchPass());
+    FPM.run(F, FAM);
+}
+

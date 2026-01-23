@@ -38,6 +38,10 @@ public:
         }
         const nlohmann::json& module_policy = policy[".mp"];
         const nlohmann::json& func_policy_map = policy[".fp"];
+        bool dump = module_policy.value("has_dump", false);
+        if (dump) {
+            dumpIR(".pluto.orig.ll", &M);
+        }
         // bcf
         if (module_policy.value("has_bcf", false)) {
             BogusControlFlow bcf;
@@ -140,6 +144,9 @@ public:
             GlobalEncryption enc;
             errs() << ">>>> run gle\n";
             enc.run(M);
+        }
+        if (dump) {
+            dumpIR(".pluto.ll", &M);
         }
         return PreservedAnalyses::all();
     };
