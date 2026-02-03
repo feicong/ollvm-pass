@@ -1,4 +1,4 @@
-# For English
+[中文说明](#简介)
 
 ## Introduction
 
@@ -41,29 +41,33 @@ extern void hikari_fla(void);
 All of the approaches above have limitations: they either require too much code modification, cannot control at function granularity, or only support specific languages. This project uses a configuration file to specify which functions and modules should be obfuscated, making it compatible with most compiler frontends and development languages.
 
 The policy file is `policy.json` in the working directory, provided by the user. Fields are:
-|                   | Type       | Meaning                                | Required |
-| :---------------- | :--------- | :------------------------------------- | :------- |
-| `globals`         | dictionary | Global options                         | No       |
-| `policy_map`      | dictionary | Mapping of `policy name -> option set` | Yes      |
-| `policies`        | array      | All policy rules                       | Yes      |
-| `policies.module` | string     | Regex match for module name            | Yes      |
-| `policies.func`   | string     | Regex match for function name          | Yes      |
-| `policies.policy` | string     | Policy name, refers to `policy_map`    | Yes      |
+|                 |Type      |Meaning                               |Required|Note    |
+|:-               |:-        |:-                                    |:-      |:-      |
+|`globals`        |dictionary|Global options                        |No      |        |
+|`policy_map`     |dictionary|Mapping of `policy name -> option set`|Yes     |        |
+|`policies`       |array     |All policy rules                      |Yes     |        |
+|`policies.module`|string    |Regex match for module name           |Yes     |        |
+|`policies.func`  |string    |Regex match for function name         |No      |Used to distinguish module-level vs function-level policies|
+|`policies.policy`|string    |Policy name, refers to `policy_map`   |Yes     |        |
 
 Rules:
-* Forward override: In the `policies` array, if a later rule matches a subset of `module`/`func` matched by an earlier rule, the later rule overrides the earlier one.
-* Comments supported: Any non-required sub-field supports `#` comments, e.g. `"#enable-strcry": true`
+* A policy that specifies only the `module` field is a `module-level` policy; a policy that specifies both `module` and `func` is a `function-level` policy
+* Forward override: For `function-level` policies in the `policies` array, if a later item’s matched `module`/`func` set is a subset of an earlier item’s matches, it overrides the earlier policy. The same applies to `module-level` policies.
+* Comments supported: Any optional sub-field supports `#` comments, e.g. `"#enable-strcry": true`
 * Name demangling supported: My other project `SLLVM` supports matching `module`/`func` even under name obfuscation for languages like `C++`/`Swift`
-
+* The `enable-dump` field in a policy is used to print module IR / function IR (depending on the policy type)
 
 ```json
 {
     "globals": {
-        "acd-use-initialize": true,
-        ...
+        "aesSeed": 4919
     },
     "policy_map": {
-        "test_pol": {
+        "my_mod_pol": {
+            "acd-use-initialize": true,
+            ...
+        },
+        "my_func_pol": {
             "enable-strcry": true,
             "enable-splitobf": false,
             "split_num": 2,
@@ -73,8 +77,12 @@ Rules:
     "policies": [
         {
             "module": ".*",
+            "policy": "my_mod_pol" // module level policy
+        },
+        {
+            "module": ".*",
             "func": ".*",
-            "policy": "test_pol"
+            "policy": "my_func_pol" // function level policy
         }
     ]
 }
@@ -128,8 +136,6 @@ Because the open-source LLVM `Clang` differs from Xcode’s `Clang`, a dynamic P
 
 
 
-# For Chinese
-
 ## 简介
 
 本项目基于`LLVM NewPass`实现`原版OLLVM`和`Hikari`的`Pass`化，有以下目标:
@@ -168,29 +174,34 @@ extern void hikari_fla(void);
 
 ### `Pass`策略语法
 
-以上方式均有局限性，或对代码改动太大，或无法控制到函数粒度，或只支持特定语言。本项目使用配置文件来指定需要混淆的函数和模块，兼容大部分编译器前端及开发语言。策略文件为工作目录下名为`policy.json`的文件，需用户提供，字段如下：
-|               |字段类型   |字段含义                   |必须|
-|:-             |:-        |:-                       |:-  |
-|globals        |字典       |全局选项                  |否  |
-|policy_map     |字典       |`策略名 - 混淆选项集合`的映射|是  |
-|policies       |数组       |所有策略                  |是  |
-|policies.module|字符串     |正则匹配模块名             |是  |
-|policies.func  |字符串     |正则匹配函数名             |是  |
-|policies.policy|字符串     |策略名，对应`policies`     |是  |
+以上方式均有局限性，或对代码改动太大，或无法控制到函数粒度，或只支持特定语言。本项目使用配置文件来指定需要混淆的函数和模块，兼容大部分编译器前端及开发语言。
+策略文件为工作目录下名为`policy.json`的文件，需用户提供，字段如下：
+|               |字段类型   |字段含义                   |必须| 特殊说明              |
+|:-             |:-        |:-                       |:-  |:-                   |
+|policy_map     |字典       |`策略名 - 混淆选项集合`的映射|是  |                      |
+|policies       |数组       |所有策略                  |是  |                      |
+|policies.module|字符串     |正则匹配模块名             |是  |                      |
+|policies.func  |字符串     |正则匹配函数名             |否  |用以区分模块级/函数级策略 |
+|policies.policy|字符串     |策略名，对应`policies`     |是  |                      |
 
 语法如下：
-* 前向覆盖，如果`policies`数组中，如果后面的项匹配的`module`/`func`是在其之前项匹配的子集，则覆盖前一项对应的策略
+* 仅指定`module`字段的策略为模块级策略，同时指定`module`/`func`字段的策略为函数级策略
+* 前向覆盖：对于`policies`数组中的函数级策略，如果后面的项匹配的`module`/`func`是在其之前项匹配的子集，则覆盖之前的策略；模块级策略同理
 * 支持注释：非必须的子字段，都支持`#`注释，如`"#enable-strcry": true`
 * 支持名称混淆：本人另一个项目`SLLVM`支持`c++`/`swift`等语言名称混淆情况下的`module`/`func`匹配
+* 策略中`enable-dump`字段用于打印模块IR/函数IR(取决于策略类型)
 
 ```json
 {
     "globals": {
-        "acd-use-initialize": true,
-        ...
+        "aesSeed": 4919
     },
     "policy_map": {
-        "test_pol": {
+        "my_mod_pol": {
+            "acd-use-initialize": true,
+            ...
+        },
+        "my_func_pol": {
             "enable-strcry": true,
             "enable-splitobf": false,
             "split_num": 2,
@@ -200,8 +211,12 @@ extern void hikari_fla(void);
     "policies": [
         {
             "module": ".*",
+            "policy": "my_mod_pol" // 模块级策略
+        },
+        {
+            "module": ".*",
             "func": ".*",
-            "policy": "test_pol"
+            "policy": "my_func_pol" // 函数级策略
         }
     ]
 }

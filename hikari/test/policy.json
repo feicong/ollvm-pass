@@ -1,19 +1,8 @@
 {
     "globals": {
-        "enable-acdobf": false,
-        "acd-use-initialize": false,
-        "acd-rename-methodimp": false,
-
-        "fco_flag": -1,
-        "fcoconfig": "+-x/",
-
-        "adbextirpath": "",
-
-        "indibran-use-stack": false,
-        "indibran-enc-jump-target": false
     },
     "policy_map": {
-        "test_pol": {
+        "test_func_pol": {
             "enable-antihook": false,
             "ah_inline": false,
             "ah_objcruntime": false,
@@ -57,27 +46,35 @@
 
             "enable-funcwra": false,
             "fw_times": 2,
-            "fw_prob": 30
+            "fw_prob": 30,
+
+            "enable-dump": false
         },
-        "test_dump": {
-            "enable-cffobf": true,
-            "dump": true
-        },
-        "test_dump_module": {
-            "enable-cffobf": true,
+        "test_mod_pol": {
+            "enable-acdobf": false,
+            "acd-use-initialize": false,
+            "acd-rename-methodimp": false,
+
+            "fco_flag": -1,
+            "fcoconfig": "+-x/",
+
+            "adbextirpath": "",
+
+            "indibran-use-stack": false,
+            "indibran-enc-jump-target": false,
+
             "enable-dump": true
         }
     },
     "policies": [
         {
-            "module": ".*",
-            "func": ".*",
-            "policy": "test_pol"
+            "module": "test1.c",
+            "policy": "test_mod_pol"
         },
         {
             "module": "test.c",
             "func": ".*",
-            "policy": "test_dump_module"
+            "policy": "test_func_pol"
         }
     ]
 }

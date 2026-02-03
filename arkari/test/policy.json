@@ -1,4 +1,29 @@
 {
-    
+    "globals": {
+    },
+    "policy_map": {
+        "test_func_pol": {
+            "enable-cff": false,
+            "enable-indbr": false,
+            "enable-icall": false,
+            "enable-indgv": false,
+            "enable-dump": false
+        },
+        "test_mod_pol": {
+            "enable-cse": false,
+            "enable-dump": true
+        }
+    },
+    "policies": [
+        {
+            "module": "test1.c",
+            "policy": "test_mod_pol"
+        },
+        {
+            "module": "test.c",
+            "func": ".*",
+            "policy": "test_func_pol"
+        }
+    ]
 }
 

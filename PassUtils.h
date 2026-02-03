@@ -39,23 +39,38 @@ private:
             }
         }
     }
-    nlohmann::json getPolicyForName(const string& name, nlohmann::json& policy_m) {
-        nlohmann::json policy = nlohmann::json::object();
-        const nlohmann::json& policy_map = conf["policy_map"];
-        policy["name"] = name;
-        if (!policy_map.contains(name)) {
-            return policy;
-        }
-        const nlohmann::json& policy_templ = policy_map[name];
-        for (auto& it : policy_templ.items()) {
-            string key = it.key();
-            policy[key] = it.value();
-            if ((startswith(key, "enable_") || startswith(key, "enable-")) && policy[key].get<bool>()) {
-                policy_m["has_" + key.substr(7)] = true;
-                policy_m["name"] = name;
+    nlohmann::json getPolicyForName(const string& name, nlohmann::json& policy_m, bool is_func_level) {
+        if (is_func_level) { // function level policy
+            nlohmann::json policy = nlohmann::json::object();
+            const nlohmann::json& policy_map = conf["policy_map"];
+            if (!policy_map.contains(name)) {
+                errs() << "could not find policy " << name << "\n";
+                return policy;
             }
+            const nlohmann::json& policy_templ = policy_map[name];
+            policy["name"] = name;
+            for (auto& it : policy_templ.items()) {
+                string key = it.key();
+                policy[key] = it.value();
+                if ((startswith(key, "enable_") || startswith(key, "enable-")) && policy[key].get<bool>()) {
+                    policy_m["has_" + key.substr(7)] = true;
+                }
+            }
+            return policy;
+        } else { // module level policy
+            const nlohmann::json& policy_map = conf["policy_map"];
+            if (!policy_map.contains(name)) {
+                errs() << "could not find policy " << name << "\n";
+                return policy_m;
+            }
+            const nlohmann::json& policy_templ = policy_map[name];
+            policy_m["name"] = name;
+            for (auto& it : policy_templ.items()) {
+                string key = it.key();
+                policy_m[key] = it.value();
+            }
+            return policy_m;
         }
-        return policy;
     }
 public:
     static Config& inst() {
@@ -125,7 +140,7 @@ public:
             func_name_lst.insert(escaped_name);
         }
         for (auto& item : mod_pol_lst) {
-            if (!item.contains("policy") || !item.contains("module") || !item.contains("func")) {
+            if (!item.contains("policy") || !item.contains("module")) {
                 continue;
             }
             filesystem::path match_path = item["module"].get<string>();
@@ -140,13 +155,13 @@ public:
                 continue;
             }
             string policy_name = item["policy"];
-            if (item.contains("func")) { // Config for function
+            if (item.contains("func")) { // function level policy
                 string match_func = item["func"];
                 for (const string& name: func_name_lst) {
                     if (!regex_match(name, regex(match_func))) { // 后面的规则覆盖前面的
                         continue;
                     }
-                    nlohmann::json policy = getPolicyForName(policy_name, module_policy);
+                    nlohmann::json policy = getPolicyForName(policy_name, module_policy, true);
                     if (!policy.empty()) {
                         func_policy_map[name] = policy;
                     } else {
@@ -156,6 +171,8 @@ public:
                         break;
                     }
                 }
+            } else { // module level policy
+                getPolicyForName(policy_name, module_policy, false);
             }
         }
         module_config[".mp"] = module_policy;

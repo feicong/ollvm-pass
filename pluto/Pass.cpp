@@ -38,7 +38,7 @@ public:
         }
         const nlohmann::json& module_policy = policy[".mp"];
         const nlohmann::json& func_policy_map = policy[".fp"];
-        bool dump = module_policy.value("has_dump", false);
+        bool dump = module_policy.value("enable-dump", false);
         if (dump) {
             dumpIR(".pluto.orig.ll", &M);
         }
@@ -135,12 +135,12 @@ public:
             }
         }
         // icall
-        if (conf.getGlobalConf().value("enable-idc", false)) {
+        if (module_policy.value("enable-idc", false)) {
             IndirectCall icall;
             icall.run(M);
         }
         // enc
-        if (conf.getGlobalConf().value("enable-gle", false)) {
+        if (module_policy.value("enable-gle", false)) {
             GlobalEncryption enc;
             errs() << ">>>> run gle\n";
             enc.run(M);

@@ -1,21 +1,27 @@
 {
     "globals": {
-        "enable-idc": false,
-        "enable-gle": false
     },
     "policy_map": {
-        "test_pol": {
+        "test_func_pol": {
             "enable-bcf": false,
             "enable-fla": false,
             "enable-sub": false,
             "enable-mba": false
+        },
+        "test_mod_pol": {
+            "enable-idc": false,
+            "enable-gle": false
         }
     },
     "policies": [
         {
-            "module": ".*",
+            "module": "test1.c",
+            "policy": "test_mod_pol"
+        },
+        {
+            "module": "test.c",
             "func": ".*",
-            "policy": "test_pol"
+            "policy": "test_func_pol"
         }
     ]
 }

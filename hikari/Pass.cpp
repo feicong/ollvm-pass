@@ -52,7 +52,7 @@ public:
         TimerGroup tg("Hikari", "Hikari");
         Timer timer("total", "total", tg);
         timer.startTimer();
-        bool dump = module_policy.value("has_dump", false);
+        bool dump = module_policy.value("enable-dump", false);
         if (dump) {
             dumpIR(".hikari.orig.ll", &M);
         }
@@ -60,7 +60,7 @@ public:
         if (module_policy.value("has_antihook", false)) {
             Timer timer("antihook", "antihook", tg);
             timer.startTimer();
-            string adhexrirpath = conf.getGlobalConf().value("adhexrirpath", "");
+            string adhexrirpath = module_policy.value("adhexrirpath", "");
             AntiHook ah;
             ah.PreCompiledIRPath = adhexrirpath;
             ah.initialize(M);
@@ -93,11 +93,11 @@ public:
             errs() << "antihook time: " << format("%.7f", timer.getTotalTime().getWallTime()) << "s\n";
         }
         // acd
-        if (conf.getGlobalConf().value("enable-acdobf", false)) {
+        if (module_policy.value("enable-acdobf", false)) {
             Timer timer("acd", "acd", tg);
             timer.startTimer();
-            bool acd_use_initialize = conf.getGlobalConf().value("acd-use-initialize", true);
-            bool acd_rename_methodimp = conf.getGlobalConf().value("acd-rename-methodimp", false);
+            bool acd_use_initialize = module_policy.value("acd-use-initialize", true);
+            bool acd_rename_methodimp = module_policy.value("acd-rename-methodimp", false);
             AntiClassDump acd;
             acd.UseInitialize = acd_use_initialize;
             acd.RenameMethodIMP = acd_rename_methodimp;
@@ -115,8 +115,8 @@ public:
             } else {
                 Timer timer("fco", "fco", tg);
                 timer.startTimer();
-                bool dlopen_flag = conf.getGlobalConf().value("fco_flag", -1);
-                string fcoconfig = conf.getGlobalConf().value("fcoconfig", "+-x/");
+                bool dlopen_flag = module_policy.value("fco_flag", -1);
+                string fcoconfig = module_policy.value("fcoconfig", "+-x/");
                 FunctionCallObfuscate fco;
                 fco.SymbolConfigPath = fcoconfig;
                 fco.dlopen_flag = dlopen_flag;
@@ -148,7 +148,7 @@ public:
         if (module_policy.value("has_adb", false)) {
             Timer timer("antidbg", "antidbg", tg);
             timer.startTimer();
-            string adbextirpath = conf.getGlobalConf().value("adbextirpath", "");
+            string adbextirpath = module_policy.value("adbextirpath", "");
             AntiDebugging adb;
             adb.PreCompiledIRPath = adbextirpath;
             adb.initialize(M);
@@ -438,8 +438,8 @@ public:
         if (module_policy.value("has_indibran", false)) {
             Timer timer("indibr", "indibr", tg);
             timer.startTimer();
-            bool indibran_use_stack = conf.getGlobalConf().value("indibran-use-stack", true);
-            bool indibran_enc_jump_target = conf.getGlobalConf().value("indibran-enc-jump-target", false);
+            bool indibran_use_stack = module_policy.value("indibran-use-stack", true);
+            bool indibran_enc_jump_target = module_policy.value("indibran-enc-jump-target", false);
             IndirectBranch indibr;
             indibr.UseStack = indibran_use_stack;
             indibr.EncryptJumpTarget = indibran_enc_jump_target;

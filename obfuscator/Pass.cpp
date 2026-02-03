@@ -34,7 +34,7 @@ public:
         }
         const nlohmann::json& module_policy = policy[".mp"];
         const nlohmann::json& func_policy_map = policy[".fp"];
-        bool dump = module_policy.value("has_dump", false);
+        bool dump = module_policy.value("enable-dump", false);
         if (dump) {
             dumpIR(".ollvm.orig.ll", &M);
         }
