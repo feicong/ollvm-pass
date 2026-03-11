@@ -39,6 +39,27 @@ private:
             }
         }
     }
+
+    nlohmann::json getPolicyForName(const string& name) {
+        const nlohmann::json& policy_map = conf["policy_map"];
+        if (!policy_map.contains(name)) {
+            return nullptr;
+        }
+        nlohmann::json cur_policy = policy_map[name];
+        nlohmann::json policy = nlohmann::json::object();
+        if (cur_policy.contains("base")) {
+            const string& base_name = cur_policy["base"];
+            policy = getPolicyForName(base_name);
+            if (policy == nullptr) {
+                errs() << "could not find policy " << base_name << "\n";
+                return nullptr;
+            }
+            cur_policy.erase("base");
+        }
+        policy.update(cur_policy);
+        return policy;
+    }
+
     nlohmann::json getPolicyForName(const string& name, nlohmann::json& policy_m, bool is_func_level) {
         if (is_func_level) { // function level policy
             nlohmann::json policy = nlohmann::json::object();
@@ -93,9 +114,6 @@ public:
             errs() << "Error: config parse failed: " << exc.what() << "\n";
             return;
         }
-        if (!conf.contains("globals")) {
-            conf["globals"] = nlohmann::json::object();
-        }
         if (!conf.contains("policy_map")) {
             conf["policy_map"] = nlohmann::json::object();
         }
@@ -111,7 +129,7 @@ public:
         inited = true;
     }
     nlohmann::json& getGlobalConf() {
-        return conf["globals"];
+        return conf;
     }
     nlohmann::json getModulePolicy(Module& M) {
         if (!inited) {
@@ -161,18 +179,24 @@ public:
                     if (!regex_match(name, regex(match_func))) { // 后面的规则覆盖前面的
                         continue;
                     }
-                    nlohmann::json policy = getPolicyForName(policy_name, module_policy, true);
-                    if (!policy.empty()) {
+                    nlohmann::json policy = getPolicyForName(policy_name);
+                    if (policy != nullptr) {
                         func_policy_map[name] = policy;
+                        for (auto& it : policy.items()) {
+                            string key = it.key();
+                            if ((startswith(key, "enable_") || startswith(key, "enable-")) && policy[key].get<bool>()) {
+                                module_policy["has_" + key.substr(7)] = true;
+                            }
+                        }
                     } else {
                         func_policy_map.erase(name);
                     }
-                    if (item.contains("final")) {
-                        break;
-                    }
                 }
             } else { // module level policy
-                getPolicyForName(policy_name, module_policy, false);
+                nlohmann::json policy = getPolicyForName(policy_name);
+                if (policy != nullptr) {
+                    module_policy = policy;
+                }
             }
         }
         module_config[".mp"] = module_policy;
