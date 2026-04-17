@@ -33,15 +33,18 @@ GlobalVariable *IndirectCall::getIndirectCallees(Function &F, ConstantInt *EncKe
   if (GV)
     return GV;
 
+  IntegerType *PtrIntTy = IntegerType::get(F.getContext(),
+      F.getParent()->getDataLayout().getPointerSizeInBits(0));
+
   // callee's address
   std::vector<Constant *> Elements;
   for (auto Callee:Callees) {
-    Constant *CE = ConstantExpr::getBitCast(Callee, PointerType::get(F.getContext(), 0));
-    CE = ConstantExpr::getGetElementPtr(Type::getInt8Ty(F.getContext()), CE, EncKey);
+    Constant *CE = ConstantExpr::getPtrToInt(Callee, PtrIntTy);
+    CE = ConstantExpr::getAdd(CE, EncKey);
     Elements.push_back(CE);
   }
 
-  ArrayType *ATy = ArrayType::get(PointerType::get(F.getContext(), 0), Elements.size());
+  ArrayType *ATy = ArrayType::get(PtrIntTy, Elements.size());
   Constant *CA = ConstantArray::get(ATy, ArrayRef<Constant *>(Elements));
   GV = new GlobalVariable(*F.getParent(), ATy, false, GlobalValue::LinkageTypes::PrivateLinkage,
                                               CA, GVName);
@@ -51,6 +54,8 @@ GlobalVariable *IndirectCall::getIndirectCallees(Function &F, ConstantInt *EncKe
 
 bool IndirectCall::runOnFunction(Function &Fn) {
   LLVMContext &Ctx = Fn.getContext();
+  IntegerType *PtrIntTy = IntegerType::get(Ctx,
+      Fn.getParent()->getDataLayout().getPointerSizeInBits(0));
 
   CalleeNumbering.clear();
   Callees.clear();
@@ -62,15 +67,12 @@ bool IndirectCall::runOnFunction(Function &Fn) {
     return false;
   }
 
-  uint32_t V = RandomEngine.get_uint32_t();
+  uint64_t V = static_cast<uint64_t>(RandomEngine.get_uint32_t() | 1U);
   IntegerType *intType = Type::getInt32Ty(Ctx);
-  ConstantInt *EncKey = ConstantInt::get(intType, V, false);
-  ConstantInt *EncKey1 = ConstantInt::get(intType, -V, false);
-
-  Value *MySecret = ConstantInt::get(intType, 0, true);
+  ConstantInt *EncKey = ConstantInt::get(PtrIntTy, V, false);
 
   ConstantInt *Zero = ConstantInt::get(intType, 0);
-  GlobalVariable *Targets = getIndirectCallees(Fn, EncKey1);
+  GlobalVariable *Targets = getIndirectCallees(Fn, EncKey);
 
   for (auto CI : CallSites) {
     SmallVector<Value *, 8> Args;
@@ -90,7 +92,7 @@ bool IndirectCall::runOnFunction(Function &Fn) {
         Targets->getValueType(), Targets,
         {Zero, Idx});
     LoadInst *EncDestAddr = IRB.CreateLoad(
-        GEP->getType(), GEP,
+        PtrIntTy, GEP,
         CI->getName());
 
     const AttributeList &CallPAL = CB->getAttributes();
@@ -108,15 +110,11 @@ bool IndirectCall::runOnFunction(Function &Fn) {
       ArgAttrVec.push_back(CallPAL.getParamAttrs(i));
     }
 
-    Value *Secret = IRB.CreateAdd(EncKey, MySecret);
-    Value *DestAddr = IRB.CreateGEP(Type::getInt8Ty(Ctx),
-        EncDestAddr, Secret);
-
-    Value *FnPtr = IRB.CreateBitCast(DestAddr, FTy->getPointerTo());
+    Value *DestAddr = IRB.CreateSub(EncDestAddr, EncKey);
+    Value *FnPtr = IRB.CreateIntToPtr(DestAddr, FTy->getPointerTo());
     FnPtr->setName("Call_" + Callee->getName());
     CB->setCalledOperand(FnPtr);
   }
 
   return true;
 }
-

@@ -24,14 +24,17 @@ GlobalVariable *IndirectGlobalVariable::getIndirectGlobalVariables(Function &F, 
   if (GV)
     return GV;
 
+  IntegerType *PtrIntTy = IntegerType::get(F.getContext(),
+      F.getParent()->getDataLayout().getPointerSizeInBits(0));
+
   std::vector<Constant *> Elements;
   for (auto GVar:GlobalVariables) {
-    Constant *CE = ConstantExpr::getBitCast(GVar, PointerType::get(F.getContext(), 0));
-    CE = ConstantExpr::getGetElementPtr(Type::getInt8Ty(F.getContext()), CE, EncKey);
+    Constant *CE = ConstantExpr::getPtrToInt(GVar, PtrIntTy);
+    CE = ConstantExpr::getAdd(CE, EncKey);
     Elements.push_back(CE);
   }
 
-  ArrayType *ATy = ArrayType::get(PointerType::get(F.getContext(), 0), Elements.size());
+  ArrayType *ATy = ArrayType::get(PtrIntTy, Elements.size());
   Constant *CA = ConstantArray::get(ATy, ArrayRef<Constant *>(Elements));
   GV = new GlobalVariable(*F.getParent(), ATy, false, GlobalValue::LinkageTypes::PrivateLinkage,
                           CA, GVName);
@@ -41,6 +44,8 @@ GlobalVariable *IndirectGlobalVariable::getIndirectGlobalVariables(Function &F, 
 
 bool IndirectGlobalVariable::runOnFunction(Function &Fn) {
   LLVMContext &Ctx = Fn.getContext();
+  IntegerType *PtrIntTy = IntegerType::get(Ctx,
+      Fn.getParent()->getDataLayout().getPointerSizeInBits(0));
 
   GVNumbering.clear();
   GlobalVariables.clear();
@@ -52,16 +57,13 @@ bool IndirectGlobalVariable::runOnFunction(Function &Fn) {
     return false;
   }
 
-  uint32_t V = RandomEngine.get_uint32_t();
+  uint64_t V = static_cast<uint64_t>(RandomEngine.get_uint32_t() | 1U);
   IntegerType* intType = Type::getInt32Ty(Ctx);
 
-  ConstantInt *EncKey = ConstantInt::get(intType, V, false);
-  ConstantInt *EncKey1 = ConstantInt::get(intType, -V, false);
-
-  Value *MySecret = ConstantInt::get(intType, 0, true);
+  ConstantInt *EncKey = ConstantInt::get(PtrIntTy, V, false);
 
   ConstantInt *Zero = ConstantInt::get(intType, 0);
-  GlobalVariable *GVars = getIndirectGlobalVariables(Fn, EncKey1);
+  GlobalVariable *GVars = getIndirectGlobalVariables(Fn, EncKey);
 
   for (inst_iterator I = inst_begin(Fn), E = inst_end(Fn); I != E; ++I) {
     Instruction *Inst = &*I;
@@ -88,15 +90,11 @@ bool IndirectGlobalVariable::runOnFunction(Function &Fn) {
               GVars,
               {Zero, Idx});
           LoadInst *EncGVAddr = IRB.CreateLoad(
-              GEP->getType(), GEP,
+              PtrIntTy, GEP,
               GV->getName());
 
-          Value *Secret = IRB.CreateAdd(EncKey, MySecret);
-          Value *GVAddr = IRB.CreateGEP(
-            Type::getInt8Ty(Ctx),
-              EncGVAddr,
-              Secret);
-          GVAddr = IRB.CreateBitCast(GVAddr, GV->getType());
+          Value *GVAddr = IRB.CreateSub(EncGVAddr, EncKey);
+          GVAddr = IRB.CreateIntToPtr(GVAddr, GV->getType());
           GVAddr->setName("IndGV0_");
           PHI->setIncomingValue(i, GVAddr);
         }
@@ -115,16 +113,12 @@ bool IndirectGlobalVariable::runOnFunction(Function &Fn) {
               GVars,
               {Zero, Idx});
           LoadInst *EncGVAddr = IRB.CreateLoad(
-              GEP->getType(),
+              PtrIntTy,
               GEP,
               GV->getName());
 
-          Value *Secret = IRB.CreateAdd(EncKey, MySecret);
-          Value *GVAddr = IRB.CreateGEP(
-            Type::getInt8Ty(Ctx),
-              EncGVAddr,
-              Secret);
-          GVAddr = IRB.CreateBitCast(GVAddr, GV->getType());
+          Value *GVAddr = IRB.CreateSub(EncGVAddr, EncKey);
+          GVAddr = IRB.CreateIntToPtr(GVAddr, GV->getType());
           GVAddr->setName("IndGV1_");
           Inst->replaceUsesOfWith(GV, GVAddr);
         }
@@ -134,4 +128,3 @@ bool IndirectGlobalVariable::runOnFunction(Function &Fn) {
 
     return true;
   }
-
